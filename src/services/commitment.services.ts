@@ -3,6 +3,7 @@ import { App, Octokit } from "octokit";
 import { PushEvent, WebhookEvent } from "@octokit/webhooks-types";
 import {
   CommitmentFilter,
+  CommitmentGroup,
   CommitmentInput,
   CommitmentSort,
   CommitmentSortField,
@@ -14,6 +15,7 @@ import { FilterQuery } from "mongoose";
 import paginateCollection from "../utils/paginate.js";
 import { getAppInstance } from "./appInstance.services.js";
 import { githubApp } from "../config/githubApp.js";
+import { DetailsConfig } from "../types/details.js";
 
 export class CommitmentService {
   private githubApp: App;
@@ -148,6 +150,10 @@ export class CommitmentService {
 
     if (!filter) return query;
 
+    if (filter.commitIds) {
+      query.commitId = { $in: filter.commitIds };
+    }
+
     if (filter.repository) {
       query["repository.fullName"] = filter.repository;
     }
@@ -246,6 +252,161 @@ export class CommitmentService {
       commitments: result.data,
       ...result.meta,
     };
+  }
+
+  private categorizeCommitType(message: string): string {
+    const types = new Map([
+      [/^feat(\(.*?\))?:/, "Feature"],
+      [/^fix(\(.*?\))?:/, "Bug Fix"],
+      [/^docs(\(.*?\))?:/, "Documentation"],
+      [/^style(\(.*?\))?:/, "Styling"],
+      [/^refactor(\(.*?\))?:/, "Refactor"],
+      [/^test(\(.*?\))?:/, "Testing"],
+      [/^chore(\(.*?\))?:/, "Maintenance"],
+    ]);
+
+    for (const [pattern, type] of types) {
+      if (pattern.test(message)) {
+        return type;
+      }
+    }
+
+    return "Other";
+  }
+
+  private groupCommitments(
+    commitments: CommitmentType[],
+    groupBy: DetailsConfig["groupBy"]
+  ): CommitmentGroup[] {
+    if (!groupBy) return [{ key: "all", commitments }];
+
+    const groups = new Map<string, CommitmentType[]>();
+
+    commitments.forEach((commitment) => {
+      let key: string;
+      switch (groupBy) {
+        case "priority":
+          key = commitment.priority;
+          break;
+        case "impact":
+          key = commitment.impact;
+          break;
+        case "author":
+          key = commitment.author.username || commitment.author.name;
+          break;
+        case "type":
+          key = this.categorizeCommitType(commitment.title);
+          break;
+        default:
+          key = "unknown";
+      }
+
+      if (!groups.has(key)) {
+        groups.set(key, []);
+      }
+      groups.get(key)!.push(commitment);
+    });
+
+    return Array.from(groups.entries()).map(([key, commitments]) => ({
+      key,
+      commitments,
+    }));
+  }
+
+  private generateStats(commitments: CommitmentType[]): string {
+    const totalCommits = commitments.length;
+    const totalFiles = commitments.reduce(
+      (acc, c) => acc + c.changes.files.length,
+      0
+    );
+    const stats = commitments.reduce(
+      (acc, c) => ({
+        additions: acc.additions + c.changes.stats.additions,
+        deletions: acc.deletions + c.changes.stats.deletions,
+      }),
+      { additions: 0, deletions: 0 }
+    );
+
+    return `
+📊 Statistics:
+- Total commits: ${totalCommits}
+- Files changed: ${totalFiles}
+- Lines added: ${stats.additions}
+- Lines removed: ${stats.deletions}
+`;
+  }
+
+  private formatFileChanges(files: CommitmentType["changes"]["files"]): string {
+    return files
+      .map((file) => `- ${file.fileName} (${file.status})`)
+      .join("\n");
+  }
+
+  private async generateMarkdownDetails(
+    commitments: CommitmentType[],
+    config: DetailsConfig
+  ): Promise<string> {
+    const groups = this.groupCommitments(commitments, config.groupBy);
+    const date = new Date().toLocaleDateString("en-US", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+
+    let details = `# Update Details - ${date}\n\n`;
+
+    if (config.includeStats) {
+      details += `${this.generateStats(commitments)}\n`;
+    }
+
+    for (const group of groups) {
+      details += `\n## ${group.key}\n`;
+
+      for (const commitment of group.commitments) {
+        details += `\n### ${commitment.title}\n`;
+
+        if (commitment.description) {
+          details += `${commitment.description}\n`;
+        }
+
+        details += `\n🔍 Details:\n`;
+        details += `- Author: ${commitment.author.name} (@${commitment.author.username})\n`;
+        details += `- Priority: ${commitment.priority}\n`;
+        details += `- Impact: ${commitment.impact}\n`;
+
+        if (config.includeFileChanges && commitment.changes.files.length > 0) {
+          details += `\n📝 Changed Files:\n`;
+          details += this.formatFileChanges(commitment.changes.files);
+          details += "\n";
+        }
+      }
+    }
+
+    return details;
+  }
+
+  public async generateDetails(
+    filter: CommitmentFilter,
+    config: DetailsConfig = {
+      groupBy: "type",
+      format: "markdown",
+      includeStats: true,
+      includeFileChanges: true,
+    }
+  ): Promise<string> {
+    const { commitments } = await this.getCommitments({
+      filter,
+      sort: { by: "timestamp", direction: "desc" },
+    });
+
+    switch (config.format) {
+      case "html":
+        throw new Error("HTML format not implemented yet");
+      case "markdown":
+      default:
+        return this.generateMarkdownDetails(commitments, config);
+    }
   }
 
   // Example method to get commitment statistics

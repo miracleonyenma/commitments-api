@@ -15,6 +15,7 @@ export type CommitmentSortField =
   | "author.name";
 
 export interface CommitmentFilter {
+  commitIds?: string[];
   repository?: string;
   priority?: CommitmentPriority;
   impact?: CommitmentImpact;
@@ -93,6 +94,11 @@ export type CommitmentInput = {
   priority?: "high" | "medium" | "low";
   impact?: "high" | "medium" | "low";
   channels?: string[];
+};
+
+export type CommitmentGroup = {
+  key: string;
+  commitments: Commitment[];
 };
 
 export type CommitmentModel = Model<Commitment>;
