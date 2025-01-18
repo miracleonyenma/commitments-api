@@ -7,17 +7,6 @@ import Role from "./role.model.js";
 import { initOTPGeneration } from "../services/otp.services.js";
 import { UserDocument, UserModel } from "../types/user.js";
 
-type User = {
-  firstName: string;
-  lastName: string;
-  email: string;
-  picture: string;
-  count: number;
-  password: string;
-  emailVerified: boolean;
-  roles: string[];
-};
-
 const registerUserSchema = object({
   firstName: string().trim().min(2).required(),
   lastName: string().trim().min(3).required(),

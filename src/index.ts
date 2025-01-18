@@ -13,6 +13,11 @@ import typeDefs from "./graphql/typeDefs/index.js";
 import resolvers from "./graphql/resolvers/index.js";
 import { authenticate } from "./middlewares/auth.middleware.js";
 import { validateApiKey } from "./middlewares/apiKey.middleware.js";
+import { authRouter } from "./routes/auth.routes.js";
+import { webhookRouter } from "./routes/webhook.routes.js";
+import { githubApp, githubWebhooks } from "./config/githubApp.js";
+import { initEvents } from "./github/events.js";
+
 interface MyContext {
   token?: string;
   user?: any;
@@ -45,15 +50,17 @@ await server.start();
 app.use(loggerMiddleware);
 
 // validate API Key middleware
-app.use(validateApiKey);
+// app.use(validateApiKey);
 
 // our authenticate middleware.
-app.use(authenticate);
+// app.use(authenticate);
 
 // Set up our Express middleware to handle CORS, body parsing,
 // and our expressMiddleware function.
 app.use(
   "/graphql",
+  validateApiKey,
+  authenticate,
   cors<cors.CorsRequest>(),
   express.json(),
   // expressMiddleware accepts the same arguments:
@@ -67,6 +74,13 @@ app.use(
     },
   })
 );
+
+app.use("/auth", authRouter);
+// app.use("/webhook", webhookRouter);
+
+app.use(githubWebhooks);
+
+initEvents();
 
 // connect database
 connectDB();

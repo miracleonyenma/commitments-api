@@ -1,4 +1,5 @@
 import apiKeyTypeDefs from "./apiKey.js";
+import { commitmentTypeDefs } from "./commitment.js";
 import googleAuthTypeDefs from "./google.auth.js";
 import otpTypeDefs from "./otp.js";
 import passwordResetTypeDefs from "./passwordReset.js";
@@ -29,6 +30,7 @@ const typeDefs = `
   ${apiKeyTypeDefs}
   ${googleAuthTypeDefs}
   ${passwordResetTypeDefs}
+  ${commitmentTypeDefs}
 `;
 
 export default typeDefs;

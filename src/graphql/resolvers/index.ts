@@ -1,4 +1,5 @@
 import ApiKeyResolvers from "./apiKey.resolvers.js";
+import { commitmentResolvers } from "./commitment.resolvers.js";
 import googleAuthResolvers from "./google.auth.resolvers.js";
 import OTPResolvers from "./otp.resolvers.js";
 import passwordResetResolvers from "./passwordReset.resolvers.js";
@@ -11,6 +12,7 @@ const resolvers = {
     ...roleResolvers.Query,
     ...OTPResolvers.Query,
     ...ApiKeyResolvers.Query,
+    ...commitmentResolvers.Query,
   },
   Mutation: {
     ...userResolvers.Mutation,
@@ -19,6 +21,7 @@ const resolvers = {
     ...ApiKeyResolvers.Mutation,
     ...googleAuthResolvers.Mutation,
     ...passwordResetResolvers.Mutation,
+    ...commitmentResolvers.Mutation,
   },
 };
 

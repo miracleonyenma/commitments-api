@@ -1,3 +1,5 @@
+// ./utils/paginate.ts
+
 import { Model, SortOrder } from "mongoose";
 
 interface Pagination {
@@ -16,7 +18,7 @@ interface PaginatedResult<T> {
 }
 
 interface SortOptions {
-  by?: "createdAt" | "updatedAt";
+  by?: "createdAt" | "updatedAt" | string;
   direction?: "asc" | "desc";
 }
 
