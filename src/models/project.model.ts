@@ -12,6 +12,7 @@ const projectSchema = new Schema<ProjectDocument, ProjectModel>(
     repository: {
       fullName: { type: String, required: true },
       url: { type: String, required: true },
+      owner: { type: String, required: true },
     },
     visibility: {
       type: String,

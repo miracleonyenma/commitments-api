@@ -74,16 +74,20 @@ const setUpProject = async ({ payload }: { payload: PushEvent }) => {
 
   const projectSlug = generateSlug(payload.repository.name);
 
+  const repositoryData = {
+    fullName: payload.repository.full_name,
+    url: payload.repository.html_url,
+    owner: user.gitHub.id,
+  };
+
+  console.log({ repositoryData });
+
   const newProject = await projectService.createProject(
     {
       slug: projectSlug,
       name: payload.repository.name,
       description: payload.repository.description,
-      repository: {
-        fullName: payload.repository.full_name,
-        url: payload.repository.html_url,
-        owner: owner.login,
-      },
+      repository: repositoryData,
       teamId: team.id,
     },
     user.id

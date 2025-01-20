@@ -41,13 +41,13 @@ export const projectTypeDefs = `#graphql
     repository: RepositoryInput
   }
 
+  input ProjectFilter {
+    visibility: String
+    teamId: ID
+  }
+
   extend type Query {
-    projects(
-      visibility: String
-      teamId: ID
-      page: Int
-      limit: Int
-    ): ProjectData
+    projects(pagination: Pagination, filter: ProjectFilter): ProjectData
     project(id: ID!): Project
     projectBySlug(slug: String!): Project
   }

@@ -4,10 +4,7 @@ export type Project = {
   name: string;
   slug: string;
   description: string;
-  repository: {
-    fullName: string;
-    url: string;
-  };
+  repository: Repository;
   visibility: "public" | "team";
   team?: Schema.Types.ObjectId;
   createdAt: Date;
