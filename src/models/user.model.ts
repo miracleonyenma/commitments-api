@@ -5,7 +5,40 @@ import { assignRoleToUser } from "../services/user.services.js";
 import Role from "./role.model.js";
 
 import { initOTPGeneration } from "../services/otp.services.js";
-import { UserDocument, UserModel } from "../types/user.js";
+import {
+  BaseUserData,
+  UpsertUserParams,
+  UserDocument,
+  UserModel,
+} from "../types/user.js";
+
+// Base upsert function that handles common logic
+async function baseUpsertUser(
+  this: any,
+  params: UpsertUserParams,
+  additionalFields: Record<string, any> = {}
+) {
+  const userRole = await Role.findOne({ name: "user" });
+
+  const updateData = {
+    firstName: params.firstName,
+    lastName: params.lastName,
+    email: params.email,
+    picture: params.picture,
+    emailVerified: params.verified_email,
+    roles: [userRole._id],
+    ...additionalFields,
+  };
+
+  const user = await this.findOneAndUpdate(
+    { email: params.email },
+    updateData,
+    { new: true, upsert: true }
+  );
+
+  const userWithRoles = await user.populate("roles");
+  return userWithRoles;
+}
 
 const registerUserSchema = object({
   firstName: string().trim().min(2).required(),
@@ -53,6 +86,10 @@ const userSchema = new mongoose.Schema<UserDocument, UserModel>(
     emailVerified: {
       type: Boolean,
       default: false,
+    },
+    gitHub: {
+      id: String,
+      login: String,
     },
     roles: [
       {
@@ -171,52 +208,28 @@ userSchema.statics.editUser = async function ({
   }
 };
 
-userSchema.statics.upsertGoogleUser = async function ({
-  email,
-  firstName,
-  lastName,
-  picture,
-  verified_email,
-}: {
-  email: string;
-  firstName: string;
-  lastName: string;
-  picture: string;
-  verified_email: boolean;
-}) {
+// Schema methods
+userSchema.statics.upsertGoogleUser = async function (params: BaseUserData) {
   try {
-    const userRole = await Role.findOne({ name: "user" });
-    const user = await this.findOneAndUpdate(
-      { email },
-      {
-        firstName,
-        lastName,
-        email,
-        picture,
-        emailVerified: verified_email,
-        roles: [userRole._id],
-      },
-      { new: true, upsert: true }
-    );
-
-    console.log("👤👤👤👤👤 ~ user", user);
-
-    // assign user role
-    // await assignRoleToUser(user._id.toString(), "user");
-    // const userWithRoles = await user.populate("roles");
-
-    const userWithRoles = await user.populate("roles");
-    console.log("👤👤👤👤👤 ~ userWithRoles", userWithRoles);
-
-    return userWithRoles;
+    return await baseUpsertUser.call(this, params);
   } catch (error) {
-    console.log("👤👤👤👤👤 ~ error", error);
-
+    console.error("Error upserting Google user:", error);
     throw new Error(error.message);
   }
 };
 
-userSchema.statics.upsertGithubUser = userSchema.statics.upsertGoogleUser;
+userSchema.statics.upsertGithubUser = async function (
+  params: UpsertUserParams
+) {
+  try {
+    return await baseUpsertUser.call(this, params, {
+      gitHub: params.gitHub,
+    });
+  } catch (error) {
+    console.error("Error upserting GitHub user:", error);
+    throw new Error(error.message);
+  }
+};
 
 const User = model<UserDocument, UserModel>("User", userSchema);
 

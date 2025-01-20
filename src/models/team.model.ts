@@ -11,13 +11,8 @@ const teamSchema = new Schema<TeamDocument, TeamModel>(
     description: { type: String },
     members: [
       {
-        user: { type: Schema.Types.ObjectId, ref: "User", required: true },
-        role: {
-          type: String,
-          enum: ["owner", "admin", "member"],
-          required: true,
-        },
-        joinedAt: { type: Date, default: Date.now },
+        type: Schema.Types.ObjectId,
+        ref: "Member",
       },
     ],
     projects: [{ type: Schema.Types.ObjectId, ref: "Project" }],

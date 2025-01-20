@@ -9,6 +9,7 @@ type OTP {
 
 input SendOTPInput {
   email: String!
+  userId: ID
 }
 
 input VerifyOTPInput {

@@ -24,17 +24,19 @@ const sendVerificationMail = async (email: string, otp: string) => {
   }
 };
 
-const initOTPGeneration = async (email: string) => {
+const initOTPGeneration = async (email: string, userId?: boolean) => {
   console.log({ email });
 
   try {
-    // check if user with email exists
-    const userExists = await User.findOne({ email });
+    // check if user with email or userId exists
+    const userExists = await User.findOne({
+      $or: [{ email }, { _id: userId }],
+    });
 
     console.log({ userExists });
 
     if (!userExists) {
-      throw new Error("User with email does not exist");
+      throw new Error("User with email or userId does not exist");
     }
 
     // generate OTP

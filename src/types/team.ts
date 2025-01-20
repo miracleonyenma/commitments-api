@@ -4,11 +4,7 @@ type Team = {
   name: string;
   slug: string;
   description: string;
-  members: Array<{
-    user: Schema.Types.ObjectId;
-    role: "owner" | "admin" | "member";
-    joinedAt: Date;
-  }>;
+  members: Schema.Types.ObjectId[];
   projects: Schema.Types.ObjectId[];
   createdAt: Date;
   updatedAt: Date;

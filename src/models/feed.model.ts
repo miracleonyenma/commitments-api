@@ -10,6 +10,7 @@ const feedSchema = new Schema<FeedDocument, FeedModel>(
       required: true,
     },
     content: { type: String, required: true },
+    details: { type: String, required: true },
     metadata: {
       commitments: [{ type: Schema.Types.ObjectId, ref: "Commitment" }],
       compareUrl: String,

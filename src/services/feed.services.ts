@@ -3,7 +3,7 @@ import { Commitment } from "../types/commitment.js";
 import Feed from "../models/feed.model.js";
 import { AnnouncementService } from "./announcement.services.js";
 import Subscription from "../models/subscription.model.js";
-import { Project } from "../types/project.js";
+import { Project, ProjectDocument } from "../types/project.js";
 import { FeedDocument } from "../types/feed.js";
 import { UserDocument } from "../types/user.js";
 
@@ -15,10 +15,16 @@ export class FeedService {
   }
 
   public async createFeedEntry(
-    project: Project,
+    project: ProjectDocument,
     commitments: Commitment[],
+    details: string,
     type: "announcement" | "changelog"
   ) {
+    console.log("creating feed entry: ", {
+      project,
+      type,
+    });
+
     // Generate content based on type
     const content =
       type === "announcement"
@@ -30,6 +36,7 @@ export class FeedService {
       project: project._id,
       type,
       content,
+      details,
       metadata: {
         commitments: commitments.map((c) => c._id),
         compareUrl: commitments[0]?.metadata?.compareUrl,
@@ -80,7 +87,10 @@ ${commits
     return "Other Changes";
   }
 
-  private async notifySubscribers(project: Project, feed: FeedDocument) {
+  private async notifySubscribers(
+    project: ProjectDocument,
+    feed: FeedDocument
+  ) {
     // Get all relevant subscriptions
     const subscriptions = await Subscription.find({
       $or: [{ project: project._id }, { team: project.team }],
@@ -126,7 +136,7 @@ ${commits
     ]);
 
     return {
-      feed,
+      data: feed,
       meta: {
         page,
         limit,

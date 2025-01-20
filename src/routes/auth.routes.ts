@@ -1,5 +1,10 @@
 import { Router } from "express";
 import User from "../models/user.model.js";
+import {
+  accessTokenData,
+  createAccessToken,
+  createRefreshToken,
+} from "../utils/token.js";
 
 type AccessTokenResponse = {
   access_token: string;
@@ -47,15 +52,19 @@ type GitHubUserResponse = {
   updated_at: string;
 };
 
+const APP_URL = process.env.APP_URL;
+
 export const authRouter = Router();
 
-authRouter.get("/callback/github", async (req, res) => {
-  const query = req.query;
-  console.log({ query });
-  const code = query.code as string;
-
+async function handleGithubAuth(
+  code: string,
+  env: {
+    clientId: string;
+    clientSecret: string;
+  }
+) {
   // Exchange the code for an access token
-  const accessToken = (await fetch(
+  const gitHubAccessToken = (await fetch(
     "https://github.com/login/oauth/access_token",
     {
       method: "POST",
@@ -64,8 +73,8 @@ authRouter.get("/callback/github", async (req, res) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        client_id: process.env.GITHUB_CLIENT_ID,
-        client_secret: process.env.GITHUB_CLIENT_SECRET,
+        client_id: env.clientId,
+        client_secret: env.clientSecret,
         code,
       }),
     }
@@ -74,20 +83,78 @@ authRouter.get("/callback/github", async (req, res) => {
   // Use the access token to get the user's information
   const user = (await fetch("https://api.github.com/user", {
     headers: {
-      Authorization: `token ${accessToken?.access_token}`,
+      Authorization: `token ${gitHubAccessToken?.access_token}`,
     },
   }).then((res) => res.json())) as GitHubUserResponse;
 
   console.log({ user });
 
   // Save the user to the database
-  User.upsertGithubUser({
+  const savedUser = await User.upsertGithubUser({
     email: user.email,
     firstName: user.name.split(" ")[0],
     lastName: user.name.split(" ")[1] || "",
     picture: user.avatar_url,
-    verified_email: true,
+    verified_email: user.email ? true : false,
+    gitHub: {
+      id: user.id,
+      login: user.login,
+    },
   });
 
-  res.send("ok");
+  return {
+    savedUser,
+    accessToken: createAccessToken(accessTokenData(savedUser)),
+    refreshToken: createRefreshToken({ id: savedUser._id }),
+  };
+}
+
+// Updated route handler
+authRouter.get("/callback/github", async (req, res) => {
+  const code = req.query.code as string;
+  const clientId = process.env.GITHUB_CLIENT_SECRET;
+  const clientSecret = process.env.GITHUB_CLIENT_SECRET;
+  try {
+    const { savedUser, accessToken, refreshToken } = await handleGithubAuth(
+      code,
+      {
+        clientId,
+        clientSecret,
+      }
+    );
+
+    const redirectUrl = new URL(`${APP_URL}/api/auth/github/callback`);
+    redirectUrl.searchParams.set("access_token", accessToken);
+    redirectUrl.searchParams.set("refresh_token", refreshToken);
+    redirectUrl.searchParams.set("user_id", savedUser._id.toString());
+    res.redirect(redirectUrl.toString());
+  } catch (error) {
+    console.error("GitHub auth error:", error);
+    res.redirect(`${APP_URL}/auth/error`);
+  }
+});
+
+authRouter.get("/callback/github/oauth", async (req, res) => {
+  const code = req.query.code as string;
+  const clientId = process.env.GITHUB_OUTH_CLIENT_ID;
+  const clientSecret = process.env.GITHUB_OUTH_CLIENT_SECRET;
+
+  try {
+    const { savedUser, accessToken, refreshToken } = await handleGithubAuth(
+      code,
+      {
+        clientId,
+        clientSecret,
+      }
+    );
+
+    const redirectUrl = new URL(`${APP_URL}/api/auth/github/callback`);
+    redirectUrl.searchParams.set("access_token", accessToken);
+    redirectUrl.searchParams.set("refresh_token", refreshToken);
+    redirectUrl.searchParams.set("user_id", savedUser._id.toString());
+    res.redirect(redirectUrl.toString());
+  } catch (error) {
+    console.error("GitHub auth error:", error);
+    res.redirect(`${APP_URL}/auth/error`);
+  }
 });

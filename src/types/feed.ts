@@ -4,6 +4,7 @@ type Feed = {
   project: Schema.Types.ObjectId;
   type: "announcement" | "changelog";
   content: string;
+  details: string;
   metadata: {
     commitments: Schema.Types.ObjectId[];
     compareUrl?: string;

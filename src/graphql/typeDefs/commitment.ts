@@ -51,11 +51,9 @@ export const commitmentTypeDefs = `#graphql
     updatedAt: String!
   }
 
-  type CommitmentPagination {
-    commitments: [Commitment!]!
-    total: Int!
-    page: Int!
-    pages: Int!
+  type CommitmentsData {
+    data: [Commitment!]
+    meta: Meta
   }
 
   input CommitmentInput {
@@ -66,8 +64,13 @@ export const commitmentTypeDefs = `#graphql
     channels: [String!]
   }
 
+  input CommitmentFilter {
+    repository: String
+    priority: String
+  }
+
   type Query {
-    commitments(page: Int, limit: Int, repository: String, priority: String): CommitmentPagination!
+    commitments(pagination: Pagination, filter: CommitmentFilter): CommitmentsData!
     commitment(commitId: String!): Commitment
   }
 

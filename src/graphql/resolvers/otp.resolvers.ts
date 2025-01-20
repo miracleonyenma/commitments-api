@@ -34,10 +34,22 @@ const OTPResolvers = {
         console.log("args", args);
 
         const email = args?.input?.email;
+        const userId = args?.input?.userId;
+
         if (!email) {
           throw new Error("Email is required");
         }
-        const response = await initOTPGeneration(email);
+
+        const existingUser = await User.findOne({ email });
+        if (existingUser) {
+          throw new Error("User already exists");
+        }
+        const targetUser = await User.findOne({ _id: userId });
+        if (!targetUser) {
+          throw new Error("User not found");
+        }
+        await targetUser.updateOne({ email: email });
+        const response = await initOTPGeneration(email, userId);
         console.log({ response });
 
         return `OTP sent to ${email} successfully`;

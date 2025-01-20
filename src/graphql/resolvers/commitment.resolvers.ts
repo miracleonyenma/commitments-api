@@ -5,7 +5,11 @@ import { CommitmentService } from "../../services/commitment.services.js";
 export const commitmentResolvers = {
   Query: {
     commitments: async (parent, args, context, info) => {
-      const { page, limit, repository, priority } = args;
+      const pagination = args.pagination || {};
+      const { page, limit } = pagination;
+      const filter = args.filter || {};
+      const repository = filter.repository;
+      const priority = filter.priority;
 
       const service = new CommitmentService();
       return service.getCommitments({

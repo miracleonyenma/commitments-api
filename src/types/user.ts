@@ -31,17 +31,31 @@ type User = {
   password?: string;
   emailVerified?: boolean;
   roles?: Types.ObjectId[];
+  gitHub?: {
+    id: string;
+    login: string;
+  };
   createdAt?: Date;
   updatedAt?: Date;
 };
 
-type UpsertInput = {
+// Types for better type safety and reusability
+type BaseUserData = {
   email: string;
   firstName: string;
   lastName: string;
   picture: string;
   verified_email: boolean;
 };
+
+type GitHubData = {
+  gitHub?: {
+    id: number;
+    login: string;
+  };
+};
+
+type UpsertUserParams = BaseUserData & GitHubData;
 
 type UserDocument = User & Document;
 
@@ -60,8 +74,16 @@ type UserModel = Model<UserDocument> & {
     lastName: string;
     email: string;
   }): Promise<UserDocument>;
-  upsertGoogleUser(data: UpsertInput): Promise<UserDocument>;
-  upsertGithubUser(data: UpsertInput): Promise<UserDocument>;
+  upsertGoogleUser(data: BaseUserData): Promise<UserDocument>;
+  upsertGithubUser(data: UpsertUserParams): Promise<UserDocument>;
 };
 
-export { AccessTokenResponse, GoogleUser, User, UserDocument, UserModel };
+export {
+  AccessTokenResponse,
+  GoogleUser,
+  User,
+  UserDocument,
+  UserModel,
+  BaseUserData,
+  UpsertUserParams,
+};

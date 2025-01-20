@@ -249,8 +249,8 @@ export class CommitmentService {
     );
 
     return {
-      commitments: result.data,
-      ...result.meta,
+      data: result.data,
+      meta: result.meta,
     };
   }
 
@@ -395,7 +395,7 @@ export class CommitmentService {
       includeFileChanges: true,
     }
   ): Promise<string> {
-    const { commitments } = await this.getCommitments({
+    const { data } = await this.getCommitments({
       filter,
       sort: { by: "timestamp", direction: "desc" },
     });
@@ -405,7 +405,7 @@ export class CommitmentService {
         throw new Error("HTML format not implemented yet");
       case "markdown":
       default:
-        return this.generateMarkdownDetails(commitments, config);
+        return this.generateMarkdownDetails(data, config);
     }
   }
 
