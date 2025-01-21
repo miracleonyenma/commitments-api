@@ -7,7 +7,10 @@ config();
 
 const appId = process.env.GITHUB_APP_ID;
 const webhookSecret = process.env.GITHUB_WEBHOOK_SECRET;
-const privateKey = process.env.GITHUB_PRIVATE_KEY;
+const privateKey = Buffer.from(
+  process.env.GITHUB_PRIVATE_KEY_BASE_64,
+  "base64"
+).toString();
 
 const githubApp = new App({
   appId: appId,
