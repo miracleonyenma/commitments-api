@@ -47,7 +47,15 @@ const setUpProject = async ({ payload }: { payload: PushEvent }) => {
 
   if (!team) {
     const name = `{${user.firstName}}'s team`;
-    const slug = generateSlug(name);
+    let slug = generateSlug(name);
+
+    // see if a team with this slug already exists
+    const existingTeam = await Team.findOne({ slug });
+
+    if (existingTeam) {
+      const randomNumber = Math.floor(Math.random() * 1000);
+      slug = generateSlug(`${name} ${randomNumber}`);
+    }
 
     const newTeam = await Team.create({
       slug,
