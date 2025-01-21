@@ -1,5 +1,6 @@
 import Project from "../../models/project.model.js";
 import Team from "../../models/team.model.js";
+import { MemberDocument } from "../../types/member.js";
 import paginateCollection from "../../utils/paginate.js";
 import { checkUser } from "../../utils/user.js";
 
@@ -10,9 +11,24 @@ const projectResolvers = {
       const filter = args.filter || {};
       const visibility = filter.visibility;
       const teamId = filter.teamId; // Check if teamId is valid
-      const team = await Team.findById(teamId);
-      if (teamId && !team) {
+      const teamSlug = filter.teamSlug;
+      const team = await Team.findOne({
+        ...(teamId && { id: teamId }),
+        ...(teamSlug && { slug: teamSlug }),
+      }).populate<{ members: MemberDocument[] }>("members");
+
+      if ((teamId || teamSlug) && !team) {
         throw new Error("Team not found");
+      }
+
+      const user = await checkUser(context.user.data?.id);
+
+      // check if user is a member of the team
+      if (team) {
+        const member = team.members.find((m) => m.user.toString() === user.id);
+        if (!member) {
+          throw new Error("User is not a member of this team");
+        }
       }
 
       const query = visibility

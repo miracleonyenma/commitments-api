@@ -7,6 +7,8 @@ const userTypeDefs = `#graphql
     email: String
     emailVerified: Boolean
     roles: [Role]
+    team: Team
+    teams: [Team]
   }
 
   type UserData {

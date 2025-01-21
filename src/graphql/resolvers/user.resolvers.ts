@@ -9,6 +9,7 @@ import {
 } from "../../utils/token.js";
 import { checkUser } from "../../utils/user.js";
 import paginateCollection from "../../utils/paginate.js";
+import Member from "../../models/member.model.js";
 
 const { sign } = pkg;
 config();
@@ -46,6 +47,35 @@ const userResolvers = {
         return await User.findById(id).populate("roles");
       } catch (error) {
         console.log("Query.me error", error);
+        throw error;
+      }
+    },
+  },
+  User: {
+    team: async (parent, args, context, info) => {
+      try {
+        const user = await checkUser(context.user.data?.id);
+        const team = await Member.findOne({
+          user: user.id,
+          role: "owner",
+        }).populate("team");
+
+        return team?.team;
+      } catch (error) {
+        console.log("Query.team error", error);
+        throw error;
+      }
+    },
+    teams: async (parent, args, context, info) => {
+      try {
+        const user = await checkUser(context.user.data?.id);
+        const teams = (await Member.find({ user: user.id }).populate("team"))
+          .map((m) => m.team)
+          .filter((t) => t !== null);
+
+        return teams;
+      } catch (error) {
+        console.log("Query.teams error", error);
         throw error;
       }
     },

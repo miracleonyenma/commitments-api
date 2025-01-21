@@ -19,6 +19,9 @@ const resolvers = {
     ...feedResolvers.Query,
     ...projectResolvers.Query,
   },
+  User: {
+    ...userResolvers.User,
+  },
   Project: {
     ...projectResolvers.Project,
   },

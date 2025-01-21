@@ -44,6 +44,7 @@ export const projectTypeDefs = `#graphql
   input ProjectFilter {
     visibility: String
     teamId: ID
+    teamSlug: String
   }
 
   extend type Query {
