@@ -19,11 +19,17 @@ async function userOwnsTeam(userId: string): Promise<TeamDocument | null> {
     role: "owner",
   });
 
+  console.log({ member });
+
   if (!member) {
     return null;
   }
 
-  return await Team.findById(member.team);
+  const team = await Team.findById(member.team);
+
+  console.log({ team });
+
+  return team;
 }
 
 export { userOwnsTeam };

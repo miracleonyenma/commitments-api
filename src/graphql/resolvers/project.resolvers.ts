@@ -21,13 +21,18 @@ const projectResolvers = {
 
       const projects = await paginateCollection(Project, pagination, {
         filter: query,
+        populate: "team",
       });
 
       return projects;
     },
     project: async (parent, args, context, info) => {
       const id = args.id;
-      const project = await Project.findById(id);
+      const slug = args.slug;
+      const project = await Project.findOne({
+        ...(id && { id }),
+        ...(slug && { slug }),
+      });
       if (!project) {
         throw new Error("Project not found");
       }
@@ -40,6 +45,12 @@ const projectResolvers = {
         throw new Error("Project not found");
       }
       return project;
+    },
+  },
+  Project: {
+    team: async (parent, args, context, info) => {
+      const team = await Team.findById(parent.team).populate("members");
+      return team;
     },
   },
   Mutation: {

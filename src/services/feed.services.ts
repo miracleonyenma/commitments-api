@@ -6,6 +6,7 @@ import Subscription from "../models/subscription.model.js";
 import { Project, ProjectDocument } from "../types/project.js";
 import { FeedDocument } from "../types/feed.js";
 import { UserDocument } from "../types/user.js";
+import paginateCollection from "../utils/paginate.js";
 
 export class FeedService {
   private announcementService: AnnouncementService;
@@ -126,23 +127,22 @@ ${commits
     const query = { project: projectId };
     if (type) query["type"] = type;
 
-    const [feed, total] = await Promise.all([
-      Feed.find(query)
-        .sort({ createdAt: -1 })
-        .skip((page - 1) * limit)
-        .limit(limit)
-        .populate("metadata.commitments"),
-      Feed.countDocuments(query),
-    ]);
-
-    return {
-      data: feed,
-      meta: {
+    const paginatedFeed = await paginateCollection(
+      Feed,
+      {
         page,
         limit,
-        total,
-        totalPages: Math.ceil(total / limit),
       },
+      {
+        filter: query,
+        sort: { by: "createdAt", direction: "desc" },
+        populate: "project",
+      }
+    );
+
+    return {
+      data: paginatedFeed.data,
+      meta: paginatedFeed.meta,
     };
   }
 }

@@ -1,3 +1,4 @@
+import Project from "../../models/project.model.js";
 import ApiKeyResolvers from "./apiKey.resolvers.js";
 import { commitmentResolvers } from "./commitment.resolvers.js";
 import feedResolvers from "./feed.resolvers.js";
@@ -17,6 +18,9 @@ const resolvers = {
     ...commitmentResolvers.Query,
     ...feedResolvers.Query,
     ...projectResolvers.Query,
+  },
+  Project: {
+    ...projectResolvers.Project,
   },
   Mutation: {
     ...userResolvers.Mutation,

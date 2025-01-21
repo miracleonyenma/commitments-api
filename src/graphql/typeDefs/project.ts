@@ -48,7 +48,7 @@ export const projectTypeDefs = `#graphql
 
   extend type Query {
     projects(pagination: Pagination, filter: ProjectFilter): ProjectData
-    project(id: ID!): Project
+    project(id: ID, slug: String): Project
     projectBySlug(slug: String!): Project
   }
 

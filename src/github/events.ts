@@ -43,6 +43,8 @@ const setUpProject = async ({ payload }: { payload: PushEvent }) => {
   // check if the user has a team they own
   team = await userOwnsTeam(user.id);
 
+  console.log({ team });
+
   if (!team) {
     const name = `{${user.firstName}}'s team`;
     const slug = generateSlug(name);
