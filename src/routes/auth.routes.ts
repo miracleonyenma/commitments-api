@@ -85,9 +85,16 @@ async function handleGithubAuth(
     headers: {
       Authorization: `token ${gitHubAccessToken?.access_token}`,
     },
-  }).then((res) => res.json())) as GitHubUserResponse;
+  }).then((res) => res.json())) as GitHubUserResponse & {
+    message?: string;
+    status?: string;
+  };
 
   console.log({ user });
+
+  if (user.status === "401") {
+    throw new Error(user.message);
+  }
 
   // Save the user to the database
   const savedUser = await User.upsertGithubUser({
